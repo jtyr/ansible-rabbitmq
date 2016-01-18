@@ -30,12 +30,12 @@ Example
     - role: rabbitmq
       # Here goes the custom configuration
       rabbitmq_config:
-        rabbit:
-          tcp_listeners:
+        - rabbit:
+          - tcp_listeners:
             - 0.0.0.0: 5672
-          ssl_listeners:
+          - ssl_listeners:
             - 5671
-          ssl_options:
+          - ssl_options:
             - cacertfile: /path/to/testca/cacert.pem
             - certfile: /path/to/server/cert.pem
             - keyfile: /path/to/server/key.pem
@@ -64,7 +64,11 @@ List of variables used by the role:
 rabbitmq_yum_repo_url: http://www.rabbitmq.com/releases/rabbitmq-server/current/
 
 # Package to install (you can force certain version here)
+# If rabbitmq_yum_repo_url is specified this must be a specific version
 rabbitmq_pkg: rabbitmq-server
+
+# Package to install (you can force certain version here)
+erlang_pkg: erlang
 
 # RabbitMQ config
 rabbitmq_config:
@@ -118,7 +122,7 @@ rabbitmq_plugins: []
 #     - rabbitmq_management
 #     new_only: no
 #     prefix: xyz
-#     state: present
+#     state: enabled
 
 # Default RabbitMQ parameters
 rabbitmq_parameters: []

@@ -2,6 +2,7 @@
 
 # Package to install (you can force certain version here)
 rabbitmq_pkg: rabbitmq-server
+erlang_pkg: erlang
 
 # Default RabbitMQ config
 rabbitmq_config:
