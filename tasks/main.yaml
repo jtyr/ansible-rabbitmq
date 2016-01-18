@@ -3,16 +3,39 @@
 - name: Test if distribution is RedHat
   assert:
     that: >
-      ansible_os_family == "RedHat" and
-      ansible_distribution_major_version | int >= 6
+      (ansible_os_family == "RedHat" and
+      ansible_distribution_major_version | int >= 6)
+      or (ansible_distribution == "Amazon" and
+      ansible_distribution_version == "2015.09")
 
-- name: Install rabbitmq-server
+- name: Install erlang from yum repos
+  yum:
+    name: "{{ erlang_pkg }}"
+  notify:
+    - Restart rabbitmq-server
+  tags:
+    - erlang_pkg
+
+- name: Install rabbitmq-server from yum repos
   yum:
     name: "{{ rabbitmq_pkg }}"
   notify:
     - Restart rabbitmq-server
   tags:
     - rabbitmq_pkg
+  when: rabbitmq_yum_repo_url is undefined
+
+- name: Add Rabbit signing-key
+  rpm_key: state=present key=https://www.rabbitmq.com/rabbitmq-signing-key-public.asc
+  tags:
+    - rabbitmq_pkg
+  when: rabbitmq_yum_repo_url is defined
+
+- name: Install rabbitmq-server from rpm
+  yum: name="{{ rabbitmq_yum_repo_url }}/{{ rabbitmq_pkg }}.rpm"
+  tags:
+    - rabbitmq_pkg
+  when: rabbitmq_yum_repo_url is defined
 
 - name: Setup RabbitMQ config
   template:
@@ -30,10 +53,10 @@
     enabled: true
 
 - name: Create sbin symlink to find executables
-  file:
-    src: /usr/lib/rabbitmq/bin
-    dest: /usr/lib/rabbitmq/sbin
-    state: link
+  lineinfile: >
+    dest=/root/.bashrc
+    state=present
+    line="PATH=$PATH:/usr/lib/rabbitmq/sbin"
 
 - name: Manage RabbitMQ vhosts
   rabbitmq_vhost:
@@ -69,6 +92,8 @@
   with_items: rabbitmq_policies
 
 - name: Manage RabbitMQ plugins
+  environment:
+    PATH: "{{ ansible_env.PATH }}:/usr/lib/rabbitmq/sbin"
   rabbitmq_plugin:
     names: "{{ item.names | join(',') }}"
     new_only: "{{ item.new_only | default('no') }}"
