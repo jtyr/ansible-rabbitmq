@@ -13,8 +13,8 @@ more details.
 Please report any issues or send PR.
 
 
-Example
--------
+Examples
+--------
 
 ```
 ---
@@ -43,15 +43,17 @@ Example
             - fail_if_no_peer_cert: true
 ```
 
-This role requires [Config Encoder
-Macros](https://github.com/picotrading/config-encoder-macros) which must be
-placed into the same directory as the playbook:
+This role requires [Config
+Encoders](https://github.com/jtyr/ansible/blob/jtyr-config_encoders/lib/ansible/plugins/filter/config_encoders.py)
+which must be configured in the `ansible.cfg` file like this:
 
 ```
-$ ls -1 *.yaml
-site.yaml
-$ git clone https://github.com/picotrading/config-encoder-macros.git ./templates/encoder
+[defaults]
+
+filter_plugins = ./plugins/filter/
 ```
+
+Where the `./plugins/filter/` containes the `config_encoders.py` file.
 
 
 Role variables
@@ -60,17 +62,14 @@ Role variables
 List of variables used by the role:
 
 ```
-# YUM repo URL
-rabbitmq_yum_repo_url: http://www.rabbitmq.com/releases/rabbitmq-server/current/
-
 # Package to install (you can force certain version here)
 rabbitmq_pkg: rabbitmq-server
 
-# RabbitMQ config
+# Default RabbitMQ config
 rabbitmq_config:
   - rabbit:
     - tcp_listeners:
-      - '"127.0.0.1'": 5671
+      - '"127.0.0.1"': 5671
 
 # Default RabbitMQ vhosts
 rabbitmq_vhosts: []
@@ -118,7 +117,7 @@ rabbitmq_plugins: []
 #     - rabbitmq_management
 #     new_only: no
 #     prefix: xyz
-#     state: present
+#     state: enabled
 
 # Default RabbitMQ parameters
 rabbitmq_parameters: []
@@ -136,8 +135,7 @@ rabbitmq_parameters: []
 Dependencies
 ------------
 
-* EPEL repo (see [`yumrepo`](https://github.com/picotrading/ansible-yumrepo) role)
-* [Config Encoder Macros](https://github.com/picotrading/config-encoder-macros)
+- [Config Encoders](https://github.com/jtyr/ansible/blob/jtyr-config_encoders/lib/ansible/plugins/filter/config_encoders.py)
 
 
 License
@@ -149,4 +147,4 @@ MIT
 Authors
 -------
 
-Robert Readman, Jiri Tyr
+Jiri Tyr

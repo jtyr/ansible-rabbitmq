@@ -3,6 +3,12 @@
 # Package to install (you can force certain version here)
 rabbitmq_pkg: rabbitmq-server
 
+# Whether to install EPEL YUM repo
+rabbitmq_epel_install: yes
+
+# EPEL YUM repo URL
+rabbitmq_epel_yumrepo_url: "{{ yumrepo_epel_url | default('https://dl.fedoraproject.org/pub/epel/' + ansible_distribution_major_version + '/' + ansible_userspace_architecture + '/') }}"
+
 # Default RabbitMQ config
 rabbitmq_config:
   - rabbit:

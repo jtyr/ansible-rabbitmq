@@ -6,8 +6,18 @@
       ansible_os_family == "RedHat" and
       ansible_distribution_major_version | int >= 6
 
+- name: Add EPEL YUM repo
+  yum_repository:
+    name: epel
+    description: EPEL YUM repo
+    baseurl: "{{ rabbitmq_epel_yumrepo_url }}"
+    gpgcheck: no
+  when: rabbitmq_epel_install
+  tags:
+    - rabbitmq_pkg
+
 - name: Install rabbitmq-server
-  yum:
+  package:
     name: "{{ rabbitmq_pkg }}"
   notify:
     - Restart rabbitmq-server
@@ -23,17 +33,21 @@
   tags:
     - rabbitmq_config
 
-- name: Make sure rabbitmq-server is enabled and running
-  service:
-    name: rabbitmq-server
-    state: started
-    enabled: true
-
 - name: Create sbin symlink to find executables
   file:
     src: /usr/lib/rabbitmq/bin
     dest: /usr/lib/rabbitmq/sbin
     state: link
+  tags:
+    - rabbitmq_config
+
+- name: Make sure rabbitmq-server is enabled and running
+  service:
+    name: rabbitmq-server
+    enabled: true
+    state: started
+  tags:
+    - rabbitmq_service
 
 - name: Manage RabbitMQ vhosts
   rabbitmq_vhost:
@@ -41,7 +55,9 @@
     node: "{{ item.node | default('rabbit') }}"
     state: "{{ item.state | default('present') }}"
     tracing: "{{ item.tracing | default('no') }}"
-  with_items: rabbitmq_vhosts
+  with_items: "{{ rabbitmq_vhosts }}"
+  tags:
+    - rabbitmq_config
 
 - name: Manage RabbitMQ users
   rabbitmq_user:
@@ -55,7 +71,9 @@
     node: "{{ item.node | default('rabbit') }}"
     state: "{{ item.state | default('present') }}"
     force: "{{ item.force | default('no') }}"
-  with_items: rabbitmq_users
+  with_items: "{{ rabbitmq_users }}"
+  tags:
+    - rabbitmq_config
 
 - name: Manage RabbitMQ policies
   rabbitmq_policy:
@@ -66,7 +84,9 @@
     state: "{{ item.state | default('present') }}"
     tags: "{{ item.tags | default('') }}"
     vhost: "{{ item.vhost | default('/') }}"
-  with_items: rabbitmq_policies
+  with_items: "{{ rabbitmq_policies }}"
+  tags:
+    - rabbitmq_config
 
 - name: Manage RabbitMQ plugins
   rabbitmq_plugin:
@@ -74,9 +94,11 @@
     new_only: "{{ item.new_only | default('no') }}"
     prefix: "{{ item.prefix | default('') }}"
     state: "{{ item.state | default('enabled') }}"
-  with_items: rabbitmq_plugins
+  with_items: "{{ rabbitmq_plugins }}"
   notify:
     - Restart rabbitmq-server
+  tags:
+    - rabbitmq_config
 
 - name: Manage RabbitMQ parameters
   rabbitmq_parameter:
@@ -86,4 +108,6 @@
     node: "{{ item.node | default('rabbit') }}"
     vhost: "{{ item.vhost | default('/') }}"
     state: "{{ item.state | default('present') }}"
-  with_items: rabbitmq_parameters
+  with_items: "{{ rabbitmq_parameters }}"
+  tags:
+    - rabbitmq_config
