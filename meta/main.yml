@@ -2,7 +2,7 @@
 
 galaxy_info:
   author: Jiri Tyr
-  description: A role that installs RabbitMQ
+  description: A role that installs RabbitMQ.
   license: MIT
   min_ansible_version: 2.1
   platforms:
@@ -13,4 +13,5 @@ galaxy_info:
   categories:
     - monitoring
     - networking
-dependencies: []
+dependencies:
+  - config_encoder_filters
