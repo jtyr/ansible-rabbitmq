@@ -14,4 +14,4 @@ galaxy_info:
     - monitoring
     - networking
 dependencies:
-  - config_encoder_filters
+  - jtyr.config_encoder_filters
