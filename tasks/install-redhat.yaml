@@ -1,0 +1,20 @@
+- name: Add EPEL YUM repo (Red Hat)
+  yum_repository:
+    name: epel
+    description: EPEL YUM repo
+    baseurl: "{{ rabbitmq_epel_yumrepo_url }}"
+    gpgkey: "{{ rabbitmq_epel_yumrepo_gpgkey }}"
+    params: "{{ rabbitmq_epel_yumrepo_params }}"
+  when: rabbitmq_epel_install == true
+  tags:
+    - rabbitmq_pkg
+
+
+- name: Install rabbitmq-server (RedHat)
+  package:
+    name: "{{ rabbitmq_pkg }}"
+  notify:
+    - Restart rabbitmq-server
+  tags:
+    - rabbitmq_pkg
+
