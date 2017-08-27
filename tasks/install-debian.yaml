@@ -10,7 +10,7 @@
     state: "present"
 
 - name: Install rabbitmq-server (Debian)
-  apt:
+  package:
     name: "{{ rabbitmq_pkg }}"
     update_cache: yes
   notify:
