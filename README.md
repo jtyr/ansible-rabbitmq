@@ -30,7 +30,7 @@ Examples
     - role: rabbitmq
       # Here goes the custom configuration
       rabbitmq_config:
-        rabbit:
+        - rabbit:
           tcp_listeners:
             - 0.0.0.0: 5672
           ssl_listeners:
