@@ -26,14 +26,16 @@
   apt_key:
     url: "{{ rabbitmq_debian_aptrepo_key }}"
     state: "present"
-  when: ansible_os_family == "Debian"
+  when: >
+    ansible_os_family == "Debian"
 
 - name: Add apt repository
   apt_repository:
     repo: "{{ debian_apt_repository }}" 
     state: present
     update_cache: true
-  when: ansible_os_family == "Debian"
+  when: >
+    ansible_os_family == "Debian"
 
 - name: Install rabbitmq-server
   package:
