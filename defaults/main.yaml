@@ -3,6 +3,9 @@
 # Package to install (you can force certain version here)
 rabbitmq_pkg: rabbitmq-server
 
+# APT key for Debian repo
+rabbitmq_debian_aptrepo_key: "https://www.rabbitmq.com/rabbitmq-release-signing-key.asc"
+
 # Whether to install EPEL YUM repo
 rabbitmq_epel_install: "{{ yumrepo_epel_install | default(true) }}"
 
