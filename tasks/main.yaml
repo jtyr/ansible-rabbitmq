@@ -22,18 +22,17 @@
   tags:
     - rabbitmq_pkg
 
-- name: Add apt key
+- name: Add APT key
   apt_key:
     url: "{{ rabbitmq_debian_aptrepo_key }}"
     state: "present"
   when: >
     ansible_os_family == "Debian"
 
-- name: Add apt repository
+- name: Add APT repository
   apt_repository:
     repo: "{{ debian_apt_repository }}" 
     state: present
-    update_cache: true
   when: >
     ansible_os_family == "Debian"
 
