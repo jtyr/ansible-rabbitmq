@@ -24,23 +24,24 @@ Examples
   roles:
     - rabbitmq
 
-# Example of how to create custom configuration
+# Example of how to create a custom configuration
 - hosts: myhost1
+  vars:
+    # Here goes the custom configuration
+    rabbitmq_config:
+      - rabbit:
+        - tcp_listeners:
+          - '"0.0.0.0"': 5672
+        - ssl_listeners:
+          - 5671
+        - ssl_options:
+          - cacertfile: /path/to/testca/cacert.pem
+          - certfile: /path/to/server/cert.pem
+          - keyfile: /path/to/server/key.pem
+          - verify: verify_peer
+          - fail_if_no_peer_cert: true
   roles:
-    - role: rabbitmq
-      # Here goes the custom configuration
-      rabbitmq_config:
-        rabbit:
-          tcp_listeners:
-            - 0.0.0.0: 5672
-          ssl_listeners:
-            - 5671
-          ssl_options:
-            - cacertfile: /path/to/testca/cacert.pem
-            - certfile: /path/to/server/cert.pem
-            - keyfile: /path/to/server/key.pem
-            - verify: verify_peer
-            - fail_if_no_peer_cert: true
+    - rabbitmq
 ```
 
 
