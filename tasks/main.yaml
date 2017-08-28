@@ -16,7 +16,8 @@
     gpgkey: "{{ rabbitmq_epel_yumrepo_gpgkey }}"
     params: "{{ rabbitmq_epel_yumrepo_params }}"
   when: >
-    ansible_os_family == 'RedHat'
+    ansible_os_family == 'RedHat' and
+    rabbitmq_epel_install == true
   tags:
     - rabbitmq_pkg
 
