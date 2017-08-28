@@ -3,10 +3,10 @@
   assert:
     that: >
       (
-        ansible_os_family == "RedHat" and
+        ansible_os_family == 'RedHat' and
         ansible_distribution_major_version | int >= 6
       ) or
-      ansible_os_family == "Debian"
+      ansible_os_family == 'Debian'
 
 - name: Add EPEL YUM repo
   yum_repository:
@@ -16,25 +16,23 @@
     gpgkey: "{{ rabbitmq_epel_yumrepo_gpgkey }}"
     params: "{{ rabbitmq_epel_yumrepo_params }}"
   when: >
-    rabbitmq_epel_install == true and
-    ansible_os_family == "RedHat" and
-    ansible_distribution_major_version | int >= 6
+    ansible_os_family == 'RedHat'
   tags:
     - rabbitmq_pkg
 
 - name: Add APT key
   apt_key:
     url: "{{ rabbitmq_debian_aptrepo_key }}"
-    state: "present"
+    state: present
   when: >
-    ansible_os_family == "Debian"
+    ansible_os_family == 'Debian'
 
 - name: Add APT repository
   apt_repository:
     repo: "{{ debian_apt_repository }}" 
     state: present
   when: >
-    ansible_os_family == "Debian"
+    ansible_os_family == 'Debian'
 
 - name: Install rabbitmq-server
   package:
