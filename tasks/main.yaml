@@ -30,8 +30,7 @@
 
 - name: Add APT repository
   apt_repository:
-    repo: "{{ debian_apt_repository }}" 
-    state: present
+    repo: "{{ debian_apt_repository }}"
   when: >
     ansible_os_family == 'Debian'
 
