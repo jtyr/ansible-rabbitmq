@@ -38,7 +38,7 @@ Examples
           - cacertfile: /path/to/testca/cacert.pem
           - certfile: /path/to/server/cert.pem
           - keyfile: /path/to/server/key.pem
-          - verify: verify_peer
+          - verify: :verify_peer
           - fail_if_no_peer_cert: true
   roles:
     - rabbitmq
