@@ -7,7 +7,7 @@ rabbitmq_pkg: rabbitmq-server
 rabbitmq_debian_aptrepo_key: https://www.rabbitmq.com/rabbitmq-release-signing-key.asc
 
 # Debian apt repository
-debian_apt_repository: deb http://www.rabbitmq.com/debian/ testing main
+rabbitmq_debian_apt_repository: deb http://www.rabbitmq.com/debian/ testing main
 
 # Whether to install EPEL YUM repo
 rabbitmq_epel_install: "{{ yumrepo_epel_install | default(true) }}"

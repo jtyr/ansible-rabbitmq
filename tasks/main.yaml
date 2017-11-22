@@ -1,4 +1,5 @@
 ---
+
 - name: Distribution test
   assert:
     that: >
@@ -30,7 +31,7 @@
 
 - name: Add APT repository
   apt_repository:
-    repo: "{{ debian_apt_repository }}"
+    repo: "{{ rabbitmq_debian_apt_repository }}"
   when: >
     ansible_os_family == 'Debian'
 
