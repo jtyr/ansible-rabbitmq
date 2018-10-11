@@ -1,25 +1,43 @@
 ---
 
+# APT repo string
+rabbitmq_apt_repo_string: deb https://dl.bintray.com/rabbitmq/debian {{ ansible_distribution_release }} main
+
+# APT repo key
+rabbitmq_apt_repo_key: https://www.rabbitmq.com/rabbitmq-release-signing-key.asc
+
+# YUM repo URL
+rabbitmq_yum_repo_url: https://dl.bintray.com/rabbitmq/rpm/rabbitmq-server/v3.7.x/el/{{ ansible_distribution_major_version }}/
+
+# YUM repo URL
+rabbitmq_yum_repo_url_erlang: https://dl.bintray.com/rabbitmq/rpm/erlang/21/el/{{ ansible_distribution_major_version }}/
+
+# YUM repo key
+rabbitmq_yum_repo_key: https://www.rabbitmq.com/rabbitmq-release-signing-key.asc
+
+# Additional YUM repo params
+rabbitmq_yum_repo_params: {}
+
 # Package to install (you can force certain version here)
 rabbitmq_pkg: rabbitmq-server
 
-# APT key for Debian repo
-rabbitmq_debian_aptrepo_key: https://www.rabbitmq.com/rabbitmq-release-signing-key.asc
+# Additional packages to install (required by some modules - e.g. rabbitmq_exchange)
+rabbitmq_pkg_add:
+  - python-requests
 
-# Debian apt repository
-rabbitmq_debian_apt_repository: deb http://www.rabbitmq.com/debian/ testing main
+# Service name
+rabbitmq_service: rabbitmq-server
 
-# Whether to install EPEL YUM repo
-rabbitmq_epel_install: "{{ yumrepo_epel_install | default(true) }}"
 
-# EPEL YUM repo URL
-rabbitmq_epel_yumrepo_url: "{{ yumrepo_epel_url | default('https://dl.fedoraproject.org/pub/epel/' + ansible_distribution_major_version + '/' + ansible_userspace_architecture + '/') }}"
+# Location of the erlang cookie file
+rabbitmq_erlang_cookie_file: /var/lib/rabbitmq/.erlang.cookie
 
-# EPEL YUM repo GPG key
-rabbitmq_epel_yumrepo_gpgkey: "{{ yumrepo_epel_gpgkey | default('https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-$releasever') }}"
+# Content of the Erlang cookie
+rabbitmq_erlang_cookie: null
 
-# Additional EPEL params
-rabbitmq_epel_yumrepo_params: "{{ yumrepo_epel_params | default({}) }}"
+
+# Path to the config file
+rabbitmq_config_file: /etc/rabbitmq/rabbitmq.config
 
 # Default RabbitMQ config
 rabbitmq_config:
@@ -27,14 +45,78 @@ rabbitmq_config:
     - tcp_listeners:
       - '"127.0.0.1"': 5671
 
-# Default RabbitMQ vhosts
-rabbitmq_vhosts: []
-# Example (see http://docs.ansible.com/rabbitmq_vhost_module.html):
-# rabbitmq_vhosts:
-#   - name: /myvhost
+# Whether to run the post_config actions only on one server
+rabbitmq_run_once: "{{ rabbitmq_erlang_cookie != None }}"
+
+# Whether to show logs on those post_config tasks which can contain password
+rabbitmq_force_show_log: no
+
+# Default RabbitMQ bindings
+rabbitmq_bindings: []
+# Example (http://docs.ansible.com/rabbitmq_binding_module.html):
+# rabbitmq_bindings:
+#   - component: federation
+#     name: local-username
+#     value: '"guest"'
 #     node: rabbit
+#     vhost: /
 #     state: present
-#     tracing: no
+
+# Default RabbitMQ exchanges
+rabbitmq_exchanges: []
+# Example (http://docs.ansible.com/rabbitmq_exchange_module.html):
+# rabbitmq_exchanges:
+#   - component: federation
+#     name: local-username
+#     value: '"guest"'
+#     node: rabbit
+#     vhost: /
+#     state: present
+
+# Default RabbitMQ parameters
+rabbitmq_parameters: []
+# Example (http://docs.ansible.com/rabbitmq_parameter_module.html):
+# rabbitmq_parameters:
+#   - component: federation
+#     name: local-username
+#     value: '"guest"'
+#     node: rabbit
+#     vhost: /
+#     state: present
+
+# Default RabbitMQ plugins
+rabbitmq_plugins: []
+# Example (see http://docs.ansible.com/rabbitmq_plugin_module.html):
+# rabbitmq_plugins:
+#   - names:
+#     - rabbitmq_management
+#     new_only: no
+#     prefix: xyz
+#     state: enabled
+
+# Default RabbitMQ policies
+rabbitmq_policies: []
+# Example (see http://docs.ansible.com/rabbitmq_policy_module.html):
+# rabbitmq_policies:
+#   - name: HA
+#     node: rabbit
+#     pattern: .*
+#     priority: 1
+#     state: present
+#     tags:
+#       ha-mode: all
+#     vhost: /myvhost
+
+# Default RabbitMQ queues
+rabbitmq_queues: []
+# Example (http://docs.ansible.com/rabbitmq_queue_module.html):
+# rabbitmq_queues:
+#   - component: federation
+#     name: local-username
+#     value: '"guest"'
+#     node: rabbit
+#     vhost: /
+#     state: present
 
 # Default RabbitMQ users
 rabbitmq_users: []
@@ -52,36 +134,11 @@ rabbitmq_users: []
 #   state: present
 #   force: yes
 
-# Default RabbitMQ policies
-rabbitmq_policies: []
-# Example (see http://docs.ansible.com/rabbitmq_policy_module.html):
-# rabbitmq_policies:
-#   - name: HA
+# Default RabbitMQ vhosts
+rabbitmq_vhosts: []
+# Example (see http://docs.ansible.com/rabbitmq_vhost_module.html):
+# rabbitmq_vhosts:
+#   - name: /myvhost
 #     node: rabbit
-#     pattern: .*
-#     priority: 1
 #     state: present
-#     tags:
-#       ha-mode: all
-#     vhost: /myvhost
-
-# Default RabbitMQ plugins
-rabbitmq_plugins: []
-# Example (see http://docs.ansible.com/rabbitmq_plugin_module.html):
-# rabbitmq_plugins:
-#   - names:
-#     - rabbitmq_management
-#     new_only: no
-#     prefix: xyz
-#     state: enabled
-
-# Default RabbitMQ parameters
-rabbitmq_parameters: []
-# Example (http://docs.ansible.com/rabbitmq_parameter_module.html):
-# rabbitmq_parameters:
-#   - component: federation
-#     name: local-username
-#     value: '"guest"'
-#     node: rabbit
-#     vhost: /
-#     state: present
+#     tracing: no

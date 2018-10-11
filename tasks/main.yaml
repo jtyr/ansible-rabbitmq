@@ -9,46 +9,66 @@
       ) or
       ansible_os_family == 'Debian'
 
-- name: Add EPEL YUM repo
+- name: Create RabbitMQ YUM repo file
   yum_repository:
-    name: epel
-    description: EPEL YUM repo
-    baseurl: "{{ rabbitmq_epel_yumrepo_url }}"
-    gpgkey: "{{ rabbitmq_epel_yumrepo_gpgkey }}"
-    params: "{{ rabbitmq_epel_yumrepo_params }}"
+    name: rabbitmq
+    description: RabbitMQ YUM repo
+    baseurl: "{{ rabbitmq_yum_repo_url }}"
+    gpgkey: "{{ rabbitmq_yum_repo_key }}"
+  args: "{{ rabbitmq_yum_repo_params }}"
   when: >
-    ansible_os_family == 'RedHat' and
-    rabbitmq_epel_install == true
+    ansible_os_family == 'RedHat'
+  tags:
+    - rabbitmq_pkg
+
+- name: Create Erlang YUM repo file
+  yum_repository:
+    name: erlang
+    file: rabbitmq
+    description: Erlang YUM repo
+    baseurl: "{{ rabbitmq_yum_repo_url_erlang }}"
+    gpgkey: "{{ rabbitmq_yum_repo_key }}"
+  when: >
+    ansible_os_family == 'RedHat'
   tags:
     - rabbitmq_pkg
 
 - name: Add APT key
   apt_key:
-    url: "{{ rabbitmq_debian_aptrepo_key }}"
+    url: "{{ rabbitmq_apt_repo_key }}"
     state: present
   when: >
     ansible_os_family == 'Debian'
 
 - name: Add APT repository
   apt_repository:
-    repo: "{{ rabbitmq_debian_apt_repository }}"
+    repo: "{{ rabbitmq_apt_repo_string }}"
   when: >
     ansible_os_family == 'Debian'
 
-- name: Install rabbitmq-server
+- name: Install RabbitMQ package
   package:
     name: "{{ rabbitmq_pkg }}"
   notify:
-    - Restart rabbitmq-server
+    - Restart RabbitMQ service
+  tags:
+    - rabbitmq_pkg
+
+- name: Install additional packages
+  package:
+    name: "{{ item }}"
+  loop: "{{ rabbitmq_pkg_add }}"
+  notify:
+    - Restart RabbitMQ service
   tags:
     - rabbitmq_pkg
 
 - name: Setup RabbitMQ config
   template:
     src: rabbitmq.conf.j2
-    dest: /etc/rabbitmq/rabbitmq.config
+    dest: "{{ rabbitmq_config_file }}"
   notify:
-    - Restart rabbitmq-server
+    - Restart RabbitMQ service
   tags:
     - rabbitmq_config
 
@@ -60,73 +80,170 @@
   tags:
     - rabbitmq_config
 
-- name: Make sure rabbitmq-server is enabled and running
+- name: Create Erlang cookie file
+  copy:
+    dest: "{{ rabbitmq_erlang_cookie_file }}"
+    content: "{{ rabbitmq_erlang_cookie }}"
+    owner: rabbitmq
+    group: rabbitmq
+    mode: "0400"
+  when: >
+    rabbitmq_erlang_cookie != None
+  tags:
+    - rabbitmq_config
+
+- name: Make sure RabbitMQ service is enabled
   service:
-    name: rabbitmq-server
+    name: "{{ rabbitmq_service }}"
     enabled: true
+  tags:
+    - rabbitmq_service
+
+- name: Make sure RabbitMQ service is running
+  service:
+    name: "{{ rabbitmq_service }}"
     state: started
   tags:
     - rabbitmq_service
 
-- name: Manage RabbitMQ vhosts
-  rabbitmq_vhost:
-    name: "{{ item.name }}"
-    node: "{{ item.node | default('rabbit') }}"
-    state: "{{ item.state | default('present') }}"
-    tracing: "{{ item.tracing | default('no') }}"
-  with_items: "{{ rabbitmq_vhosts }}"
-  tags:
-    - rabbitmq_config
-
-- name: Manage RabbitMQ users
-  rabbitmq_user:
-    user: "{{ item.user }}"
-    password: "{{ item.password | default('') }}"
-    vhost: "{{ item.vhost | default('/') }}"
-    tags: "{{ item.tags | default([]) | join(',') }}"
-    configure_priv: "{{ item.configure_priv | default('^$') }}"
-    read_priv: "{{ item.read_priv | default('^$') }}"
-    write_priv: "{{ item.write_priv | default('^$') }}"
-    node: "{{ item.node | default('rabbit') }}"
-    state: "{{ item.state | default('present') }}"
-    force: "{{ item.force | default('no') }}"
-  with_items: "{{ rabbitmq_users }}"
-  tags:
-    - rabbitmq_config
-
-- name: Manage RabbitMQ policies
-  rabbitmq_policy:
-    name: "{{ item.name }}"
-    node: "{{ item.node | default('rabbit') }}"
-    pattern: "{{ item.pattern | default('^$') }}"
-    priority: "{{ item.priority | default(0) }}"
-    state: "{{ item.state | default('present') }}"
-    tags: "{{ item.tags | default('') }}"
-    vhost: "{{ item.vhost | default('/') }}"
-  with_items: "{{ rabbitmq_policies }}"
-  tags:
-    - rabbitmq_config
-
 - name: Manage RabbitMQ plugins
   rabbitmq_plugin:
     names: "{{ item.names | join(',') }}"
-    new_only: "{{ item.new_only | default('no') }}"
-    prefix: "{{ item.prefix | default('') }}"
-    state: "{{ item.state | default('enabled') }}"
+    new_only: "{{ item.new_only | default(omit) }}"
+    prefix: "{{ item.prefix | default(omit) }}"
+    state: "{{ item.state | default(omit) }}"
   with_items: "{{ rabbitmq_plugins }}"
   notify:
-    - Restart rabbitmq-server
+    - Restart RabbitMQ service
   tags:
-    - rabbitmq_config
+    - rabbitmq_post_config
+    - rabbitmq_post_config_plugins
 
 - name: Manage RabbitMQ parameters
   rabbitmq_parameter:
-    name: "{{ item.name }}"
     component: "{{ item.component }}"
-    value: "{{ item.value | default('') }}"
-    node: "{{ item.node | default('rabbit') }}"
-    vhost: "{{ item.vhost | default('/') }}"
-    state: "{{ item.state | default('present') }}"
+    name: "{{ item.name }}"
+    node: "{{ item.node | default(omit) }}"
+    state: "{{ item.state | default(omit) }}"
+    value: "{{ item.value | default(omit) }}"
+    vhost: "{{ item.vhost | default(omit) }}"
   with_items: "{{ rabbitmq_parameters }}"
+  run_once: "{{ rabbitmq_run_once }}"
   tags:
-    - rabbitmq_config
+    - rabbitmq_post_config
+    - rabbitmq_post_config_parameters
+
+- name: Manage RabbitMQ policies
+  rabbitmq_policy:
+    apply_to: "{{ item.apply_to | default(omit) }}"
+    name: "{{ item.name }}"
+    node: "{{ item.node | default(omit) }}"
+    pattern: "{{ item.pattern }}"
+    priority: "{{ item.priority | default(omit) }}"
+    state: "{{ item.state | default(omit) }}"
+    tags: "{{ item.tags | default(omit) }}"
+    vhost: "{{ item.vhost | default(omit) }}"
+  with_items: "{{ rabbitmq_policies }}"
+  run_once: "{{ rabbitmq_run_once }}"
+  tags:
+    - rabbitmq_post_config
+    - rabbitmq_post_config_policies
+
+- name: Manage RabbitMQ users
+  rabbitmq_user:
+    configure_priv: "{{ item.configure_priv | default(omit) }}"
+    force: "{{ item.force | default(omit) }}"
+    node: "{{ item.node | default(omit) }}"
+    password: "{{ item.password | default(omit) }}"
+    permissions: "{{ item.permissions | default(omit) }}"
+    read_priv: "{{ item.read_priv | default(omit) }}"
+    state: "{{ item.state | default(omit) }}"
+    tags: "{{ item.tags | default([]) | join(',') }}"
+    update_password: "{{ item.update_password | default(omit) }}"
+    user: "{{ item.user }}"
+    vhost: "{{ item.vhost | default(omit) }}"
+    write_priv: "{{ item.write_priv | default(omit) }}"
+  with_items: "{{ rabbitmq_users }}"
+  run_once: "{{ rabbitmq_run_once }}"
+  no_log: "{{ not rabbitmq_force_show_log == true }}"
+  tags:
+    - rabbitmq_post_config
+    - rabbitmq_post_config_users
+
+- name: Manage RabbitMQ vhosts
+  rabbitmq_vhost:
+    name: "{{ item.name }}"
+    node: "{{ item.node | default(omit) }}"
+    state: "{{ item.state | default(omit) }}"
+    tracing: "{{ item.tracing | default(omit) }}"
+  with_items: "{{ rabbitmq_vhosts }}"
+  run_once: "{{ rabbitmq_run_once }}"
+  tags:
+    - rabbitmq_post_config
+    - rabbitmq_post_config_vhosts
+
+- name: Manage RabbitMQ exchanges
+  rabbitmq_exchange:
+    arguments: "{{ item.arguments | default(omit) }}"
+    auto_delete: "{{ item.auto_delete | default(omit) }}"
+    durable: "{{ item.durable | default(omit) }}"
+    exchange_type: "{{ item.exchange_type | default(omit) }}"
+    internal: "{{ item.internal | default(omit) }}"
+    login_host: "{{ item.login_host | default(omit) }}"
+    login_password: "{{ item.login_password | default(omit) }}"
+    login_port: "{{ item.login_port | default(omit) }}"
+    login_user: "{{ item.login_user | default(omit) }}"
+    name: "{{ item.name }}"
+    state: "{{ item.state | default(omit) }}"
+    vhost: "{{ item.vhost | default(omit) }}"
+  with_items: "{{ rabbitmq_exchanges }}"
+  run_once: "{{ rabbitmq_run_once }}"
+  no_log: "{{ not rabbitmq_force_show_log == true }}"
+  tags:
+    - rabbitmq_post_config
+    - rabbitmq_post_config_exchanges
+
+- name: Manage RabbitMQ queues
+  rabbitmq_queue:
+    arguments: "{{ item.arguments | default(omit) }}"
+    auto_delete: "{{ item.auto_delete | default(omit) }}"
+    auto_expires: "{{ item.auto_expires | default(omit) }}"
+    dead_letter_exchange: "{{ item.dead_letter_exchange | default(omit) }}"
+    dead_letter_routing_key: "{{ item.dead_letter_routing_key | default(omit) }}"
+    durable: "{{ item.durable | default(omit) }}"
+    login_host: "{{ item.login_host | default(omit) }}"
+    login_password: "{{ item.login_password | default(omit) }}"
+    login_port: "{{ item.login_port | default(omit) }}"
+    login_user: "{{ item.login_user | default(omit) }}"
+    max_length: "{{ item.max_length | default(omit) }}"
+    max_priority: "{{ item.max_priority | default(omit) }}"
+    message_ttl: "{{ item.message_ttl | default(omit) }}"
+    name: "{{ item.name }}"
+    state: "{{ item.state | default(omit) }}"
+    vhost: "{{ item.vhost | default(omit) }}"
+  with_items: "{{ rabbitmq_queues }}"
+  run_once: "{{ rabbitmq_run_once }}"
+  no_log: "{{ not rabbitmq_force_show_log == true }}"
+  tags:
+    - rabbitmq_post_config
+    - rabbitmq_post_config_queues
+
+- name: Manage RabbitMQ bindings
+  rabbitmq_binding:
+    arguments: "{{ item.arguments | default(omit) }}"
+    destination: "{{ item.destination }}"
+    destination_type: "{{ item.destination_type }}"
+    login_host: "{{ item.login_host | default(omit) }}"
+    login_password: "{{ item.login_password | default(omit) }}"
+    login_port: "{{ item.login_port | default(omit) }}"
+    login_user: "{{ item.login_user | default(omit) }}"
+    name: "{{ item.name }}"
+    routing_key: "{{ item.routing_key | default(omit) }}"
+    state: "{{ item.state | default(omit) }}"
+    vhost: "{{ item.vhost | default(omit) }}"
+  with_items: "{{ rabbitmq_bindings }}"
+  run_once: "{{ rabbitmq_run_once }}"
+  no_log: "{{ not rabbitmq_force_show_log == true }}"
+  tags:
+    - rabbitmq_post_config
+    - rabbitmq_post_config_bindings

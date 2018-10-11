@@ -1,6 +1,9 @@
 ---
 
-- name: Restart rabbitmq-server
+- name: Restart RabbitMQ service
   service:
-    name: rabbitmq-server
+    name: "{{ rabbitmq_service }}"
     state: restarted
+  when: >
+    rabbitmq_service_started is not defined or
+    not rabbitmq_service_started.changed
